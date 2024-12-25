@@ -4,3 +4,11 @@ pillow
 rembg
 numpy
 onnxruntime
+fpdf 
+pyMuPDF
+PyPDF2
+yt-dlp 
+moviepy
+tempfile
+os
+subprocess

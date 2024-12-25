@@ -3,6 +3,14 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 import numpy as np
 import io
 import rembg
+from fpdf import FPDF
+import PyPDF2
+import os
+import fitz
+import subprocess
+import os
+import tempfile
+
 
 # Function to apply dynamic image adjustments
 def process_image(img, contrast, brightness, sharpness, blur_radius, sepia, posterize, emboss, edge_detect, color_balance, noise, invert, grayscale, vignette, solarize, cartoonify, unsharp_mask, background_removal, crop, resize_width, resize_height, rotation, flip_horizontal, flip_vertical):
@@ -214,12 +222,14 @@ def crop_image(img):
 # Sidebar with navigation
 def main():
     st.sidebar.title("Navigation")
-    app_mode = st.sidebar.selectbox("Choose an option", ["Image Editor", "Other App"])
+    app_mode = st.sidebar.selectbox("Choose an option", ["Image Editor", "Image to PDF", "YouTube Downloader"])
 
     if app_mode == "Image Editor":
         image_editor()
-    elif app_mode == "Other App":
-        other_app()
+    elif app_mode == "Image to PDF":
+        pdf_app()
+    elif app_mode == "YouTube Downloader":
+        youtube_downloader()
 
 # Image editor page
 def image_editor():
@@ -281,10 +291,168 @@ def image_editor():
                 mime="image/jpeg"
             )
 
-# Placeholder for another app
-def other_app():
-    st.title("Other App")
-    st.write("This is where another app will go!")
+def pdf_app():
+    # Title for the app
+    st.title("PDF Processing App")
+    st.write("This is where you can convert images to PDFs")
+
+    # Upload images to convert to PDF
+    uploaded_files = st.file_uploader("Upload images", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+
+    # Function to create PDF from images
+    def images_to_pdf(images):
+        pdf = FPDF()
+        for img in images:
+            im = Image.open(img)
+            im = im.convert("RGB")
+            temp_path = "temp_image.jpg"
+            im.save(temp_path, quality=85)  # Save image with reduced quality
+            pdf.add_page()
+            pdf.image(temp_path, x=10, y=10, w=180)
+            os.remove(temp_path)  # Clean up the temporary image file
+        return pdf
+
+    # Function to compress the PDF using PyMuPDF
+ 
+    # Function to rename the PDF file
+
+
+    # If files are uploaded, proceed
+    if uploaded_files:
+        # Save the uploaded images temporarily
+        image_paths = []
+        for uploaded_file in uploaded_files:
+            image = Image.open(uploaded_file)
+            image_path = f"temp_{uploaded_file.name}"
+            image.save(image_path)
+            image_paths.append(image_path)
+
+        # Convert images to PDF
+        if st.button("Convert Images to PDF"):
+            try:
+                pdf = images_to_pdf(image_paths)
+                pdf_output = "output.pdf"
+                pdf.output(pdf_output)
+
+                st.success(f"PDF created successfully: {pdf_output}")
+
+                # Provide download link for the generated PDF
+                with open(pdf_output, "rb") as f:
+                    st.download_button(
+                        label="Download PDF",
+                        data=f,
+                        file_name=pdf_output,
+                        mime="application/pdf"
+                    )
+            except Exception as e:
+                st.error(f"Error converting images to PDF: {e}")
+
+        # Option to compress the generated PDF
+
+st.set_page_config(page_title="YouTube Downloader", layout="centered")
+def youtube_downloader():
+    # Streamlit UI Code Inside the youtube_downloader Function
+    st.title("YouTube Video Downloader")
+
+    # Input fields for video URL and type (Single Video/Playlist)
+    with st.container():
+        st.markdown("### Input Video Details")
+        url = st.text_input("Enter YouTube URL", key="url_input")
+        option = st.selectbox("Download Type", ("Single Video", "Playlist"), key="download_type")
+        is_playlist = option == "Playlist"
+
+    # Options for video quality and subtitles
+    with st.container():
+        st.markdown("### Options")
+        quality = st.selectbox(
+            "Select Video Quality",
+            ["144p", "240p", "360p", "480p", "720p", "1080p", "1440p", "2160p", "Best Available"],
+            index=4,
+            key="quality_select"
+        )
+        subtitles = st.checkbox("Add Subtitles", key="subtitles_checkbox")
+
+    # Download button
+    with st.container():
+        download_button = st.button("Download", key="download_button")
+
+    # Handle the download when the button is clicked
+    if download_button:
+        if not url:
+            st.error("Please provide a valid YouTube URL.")
+        else:
+            try:
+                with st.spinner("Downloading... Please wait."):
+                    # Call the function to download the video
+                    temp_dir = tempfile.mkdtemp()
+
+                    # Base command for yt-dlp
+                    cmd = ["yt-dlp", "-o", os.path.join(temp_dir, "%(title)s.%(ext)s")]
+
+                    # Add format options for video and audio based on selected quality
+                    if quality == "144p":
+                        cmd += ["-f", "bv*[height<=144][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "240p":
+                        cmd += ["-f", "bv*[height<=240][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "360p":
+                        cmd += ["-f", "bv*[height<=360][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "480p":
+                        cmd += ["-f", "bv*[height<=480][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "720p":
+                        cmd += ["-f", "bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "1080p":
+                        cmd += ["-f", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "1440p":
+                        cmd += ["-f", "bv*[height<=1440][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    elif quality == "2160p":
+                        cmd += ["-f", "bv*[height<=2160][ext=mp4]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]"]
+                    else:
+                        cmd += ["-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"]
+
+                    # Set output format to mp4
+                    cmd += ["--merge-output-format", "mp4"]
+
+                    # Subtitles options
+                    if subtitles:
+                        cmd += ["--write-sub", "--sub-lang", "en", "--embed-subs"]
+
+                    # Playlist or single video
+                    if is_playlist:
+                        cmd += ["-o", os.path.join(temp_dir, "%(playlist_index)s. %(title)s.%(ext)s")]
+                    else:
+                        cmd += ["-o", os.path.join(temp_dir, "%(title)s.%(ext)s")]
+
+                    # Add the URL
+                    cmd.append(url)
+
+                    # Execute the command
+                    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+                    # Check for errors
+                    if result.returncode != 0:
+                        st.error(f"Error occurred: {result.stderr}")
+                        return None
+
+                    # Return the path to the downloaded file
+                    downloaded_file = [f for f in os.listdir(temp_dir) if f.endswith('.mp4') or f.endswith('.mkv') or f.endswith('.webm')][0]
+                    file_path = os.path.join(temp_dir, downloaded_file)
+
+                    # Provide a download link/button for the user to download the video
+                    if file_path:
+                        with open(file_path, "rb") as file:
+                            st.download_button(
+                                label="Download Video",
+                                data=file,
+                                file_name=os.path.basename(file_path),
+                                mime="video/mp4"
+                            )
+
+                st.success("Download completed successfully!")
+
+            except subprocess.CalledProcessError:
+                st.error("An error occurred during the download. Please check the URL and try again.")
+            except Exception as e:
+                st.error(f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
