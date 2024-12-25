@@ -9,6 +9,3 @@ pyMuPDF
 PyPDF2
 yt-dlp 
 moviepy
-tempfile
-os
-subprocess
